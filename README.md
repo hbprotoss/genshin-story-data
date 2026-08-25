@@ -1,7 +1,7 @@
 # genshin-story-data
 
 《原神》游戏文本的整合仓库 —— 把散落在各处的角色、任务、书籍、武器、圣遗物与地图
-文本收拢成统一、可直接检索的结构化数据集，并在其上构建了一层实体关系知识图谱。
+文本收拢成统一、可直接检索的结构化数据集。
 
 > ## ⚠️ 版权声明
 >
@@ -15,7 +15,7 @@
 
 ## 数据内容
 
-数据以 JSON 形式存放在 `export/`，每个 collection 一个文件，共 **124,718 条**记录。
+数据以 JSON 形式存放在 `export/`，每个 collection 一个文件，文本部分共 **4,590 条**记录。
 格式为 MongoDB Relaxed Extended JSON（`ObjectId` / `datetime` 等类型信息保留），
 文件本身是合法的 JSON 数组，每行一条记录，可直接 `json.load` 或按行流式读取。
 
@@ -33,20 +33,6 @@
 | 武器 | `weapon.json` | `weapon_filtered.json` | 246 |
 | 圣遗物 | `artifact.json` | `artifact_filtered.json` | 63 |
 | 书籍 | `book.json` | `book_filtered.json` | 93 |
-
-### 知识图谱
-
-在上述文本之上抽取的实体与关系。
-
-| 文件 | 条数 | 字段 |
-| --- | --- | --- |
-| `kg_entities.json` | 23,937 | `name` `type` `aliases` `summary` `source_ids` |
-| `kg_edges.json` | 94,050 | `src_id` `dst_id` `relation` `relation_label` `evidence` |
-| `kg_build_state.json` | 2,141 | `content_hash` `extraction` `status`（增量构建状态） |
-
-实体 `_id` 为 UUID 字符串；边的 `src_id` / `dst_id` 既可能指向实体 UUID，也可能是
-`<collection>:<id>` 形式的源文档引用（如 `artifact_filtered:501139`），
-`evidence` 记录该关系的出处与原文片段。
 
 ## 工具脚本
 
@@ -91,12 +77,11 @@ uv run python export_mongo.py
 ```bash
 uv run python import_mongo.py --dry-run   # 只报告，不写入
 uv run python import_mongo.py --drop      # 清空后导入（覆盖必需）
-uv run python import_mongo.py --only kg_edges kg_entities
+uv run python import_mongo.py --only mission_filtered character_filtered
 ```
 
 ## 说明
 
-- 导出/导入只覆盖**文档数据，不含索引**。目标库若依赖索引（如 `kg_edges` 约 9.4 万条），
-  导入后需自行重建。
-- `kg_build_state` / `kg_edges` / `kg_entities` 的 `_id` 是字符串而非 `ObjectId`，
-  这是源数据设计，round-trip 会如实保留。
+- 导出/导入只覆盖**文档数据，不含索引**。目标库若依赖索引，导入后需自行重建。
+- 导出为 Relaxed Extended JSON，`import_mongo.py` 会把 `$oid` / `$date` 还原成
+  `ObjectId` / `datetime`；用其他工具读取时注意这层包装。
