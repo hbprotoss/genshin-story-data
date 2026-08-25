@@ -1,0 +1,9 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+
+# Credentials — never commit
+.env
+.env.*
+!.env.example
